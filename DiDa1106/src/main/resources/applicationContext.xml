@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+	http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+	http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+        
+        <!-- 1、扫描包 -->
+        <context:component-scan base-package="com.leon" >
+        
+	        <!-- 排除控制层的包，不扫描 -->
+	        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+        </context:component-scan>
+        
+        
+        <!-- 2、加载数据库配置文件，可读取多个配置文件 -->
+        <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        	<property name="locations">
+        		<list>
+        			<value>classpath:jdbc.properties</value>
+        		</list>
+        	</property>
+        </bean>
+        
+        
+        <!-- 3、配置C3P0数据源 -->
+        <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        	<property name="jdbcUrl" value="${jdbc.jdbcUrl}" />
+        	<property name="driverClass" value="${jdbc.driverClass}" />
+        	<property name="user" value="${jdbc.username}" />
+        	<property name="password" value="${jdbc.password}" />
+        	
+        	
+        	<!-- 每60秒检查所有连接池中空闲连接。默认值0， 不检查 -->
+        	<property name="idleConnectionTestPeriod" value="60" />
+        	<!-- 连接数据库连接最大空闲时间 -->
+        	<property name="maxIdleTime" value="30" />
+        	<!-- 连接池初始化连接数 -->
+        	<property name="initialPoolSize" value="5"/>
+        	<property name="minPoolSize" value="5" />
+        	<property name="maxPoolSize" value="20" />
+        	<!-- 当连接池中连接耗尽时，C3P0一次获取的连接数     默认值3-->
+        	<property name="acquireIncrement" value="5" />
+        </bean>
+        
+        
+        <!-- 4、配置sqlSessionFactory -->
+        <bean id="sqlSessionFactory" class="com.baomidou.mybatisplus.spring.MybatisSqlSessionFactoryBean">
+        	<property name="dataSource" ref="dataSource" />
+        	<!-- 加载mybatis配置文件 -->
+        	<property name="configLocation" value="classpath:mybatis-config.xml"/>
+        	<!-- 自动扫描mapper下面的 .xml文件 -->
+        	<property name="mapperLocations" value="classpath:com/leon/mapper/*.xml"/>
+        	
+        	<property name="typeAliasesPackage" value="com.leon.bean" />
+        </bean>
+        
+        
+        <!-- Mapper扫描：因为Mapper层只有接口，Spring框架会自动给Mapper生成代理，也就是说Mapper自动创建对象 -->
+        <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        	<property name="basePackage" value="com.leon.mapper"/>
+        </bean>
+        
+        
+        <!-- 5、配置平台事务管理器 -->
+        <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        	<property name="dataSource" ref="dataSource" />
+        </bean>
+        
+        <!-- 6、开启事务注解支持 -->
+        <tx:annotation-driven transaction-manager="transactionManager"/>
+        
+</beans>
